@@ -3,7 +3,7 @@
 
 #define SERIAL_UART_NUM 2
 
-#define PIC_UART1 ((volatile struct pic_uart *)0xBF806000)
+#define PIC_UART1 ((volatile struct pic_uart *)0xBF806100)
 #define PIC_UART2 ((volatile struct pic_uart *)0xBF806200)
 
 
@@ -110,18 +110,25 @@ static struct {
 /* デバイス初期化 */
 int serial_init(int index)
 {
-  if(!((index==0)|(index==1)))  return -1; 
-
   volatile struct pic_uart *uart = regs[index].uart;
+
+  volatile unsigned int *U2STASET=0xBF806218;
+  volatile unsigned int *INTCONSET=0xBF881008;
+  volatile unsigned int *IPC9SET=0xBF881128;
+
+  *INTCONSET=0x1000;
+  *IPC9SET=0x400;
+  IEC0SET=0b110;
 
   uart ->UxSTA   = 0x0;
   uart ->UxTXREG = 0x0;
-  uart ->UxBRG   = F_PBCLK / 9600 / 16 - 1; //UxBRG = F_PBCLK / baud_rate / 16
+  uart ->UxBRG   = 0x137;
   uart ->UxSTASET= PIC_UART_UxSTA_URXEN | PIC_UART_UxSTA_UTXEN;
   uart ->UxMODE  = PIC_UART_UxMODE_ON;
-
   return 0;
 }
+
+
 
 
 /* 送信可能か？ */

@@ -19,7 +19,7 @@ PIC32PROG = pic32prog
 
 
 OBJS  = startup.o main.o hardware.o intr.o interrupt.o vector.o
-OBJS += lib.o serial.o xmodem.o elf.o ihex.o
+OBJS += lib.o serial.o xmodem.o ihex.o
 
 TARGET = kzload
 
@@ -35,7 +35,13 @@ LFLAGS = -static -T ld.scr -L.
 .SUFFIXES: .s .o
 .SUFFIXES: .S .o
 
-all :		$(TARGET) $(TARGET).hex
+all : 
+	docker run --rm -it -v $(PWD):$(PWD) -w $(PWD) -u "$(shell id -u):$(shell id -g)" -v /etc/passwd:/etc/passwd:ro -v /etc/group:/etc/group:ro ghcr.io/envzhu/kozos-pic-ongdb/build:latest /bin/bash -c "\
+	make build && \
+	mips-elf-objcopy -I ihex -O ihex --change-addresses -0x80000000 ./kzload.hex ./kzload.flash.hex && \
+	exit"
+
+build: $(TARGET) $(TARGET).hex
 
 $(TARGET) :	$(OBJS)
 		$(CC) $(OBJS) -o $(TARGET) $(CFLAGS) $(LFLAGS)
@@ -56,14 +62,11 @@ $(TARGET).hex :	$(TARGET)
 
 image :	$(TARGET).hex
 
-write:	$(TARGET).hex
-	$(PIC32PROG) $(TARGET).hex
+# write:	$(TARGET).hex
+# 	$(PIC32PROG) $(TARGET).hex
 	
 obj_clean :
 		rm -f $(OBJS)
 
 clean :
-		rm -f $(OBJS) $(TARGET) $(TARGET).elf $(TARGET).hex
-
-line :
-		wc -l *.c *.h *.s *.S ld.scr Makefile
+		rm -f $(OBJS) $(TARGET) $(TARGET).elf $(TARGET).hex $(TARGET).flash.hex

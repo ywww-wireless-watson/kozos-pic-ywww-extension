@@ -14,42 +14,47 @@ RANLIB  = $(ADDNAME)ranlib
 STRIP   = $(ADDNAME)strip
 BIN2HEX = $(ADDNAME)bin2hex
 
+OBJS  = startup.o main.o lib.o serial.o timer.o interrupt.o hardware.o
 
-OBJS  = startup.o main.o hardware.o interrupt.o vector.o intr.o
-OBJS += lib.o serial.o timer.o
-
-# sources of kozos
-OBJS += kozos.o syscall.o memory.o consdrv.o tmrdrv.o command.o
+OBJS += kozos.o syscall.o memory.o consdrv.o tmrdrv.o command.o periodic.o
 
 TARGET = kozos
 
-CFLAGS = -Wall -march=m4k -EL -nostdinc -nostdlib -fno-builtin
+CFLAGS = -Wall -march=m4k -EL -nostdinc -nostdlib -fno-builtin -DDEBUG
 CFLAGS += -I. 
 CFLAGS += -G0 #これをしないとエラーが出る
 CFLAGS += -Os
-CFLAGS += -DKOZOS -DDEBUG
+CFLAGS += -DKOZOS
+CFLAGS += -MMD -MP
 
 LFLAGS = -static -T ld.scr -L.
 
+DEPS = $(OBJS:.o=.d)
+
 .SUFFIXES: .c .o
-.SUFFIXES: .s .o
 .SUFFIXES: .S .o
+.SUFFIXES: .s .o
 
-all :		$(TARGET) $(TARGET).hex
+all : 
+	docker run --rm -it -v $(PWD):$(PWD) -w $(PWD) -u "$(shell id -u):$(shell id -g)" -v /etc/passwd:/etc/passwd:ro -v /etc/group:/etc/group:ro ghcr.io/envzhu/kozos-pic-ongdb/build:latest /bin/bash -c "\
+	make build && \
+	exit"
 
-$(TARGET) :	$(OBJS) Makefile ld.scr
+build: $(TARGET) $(TARGET).hex
+
+$(TARGET) :	$(OBJS)
 		$(CC) $(OBJS) -o $(TARGET) $(CFLAGS) $(LFLAGS)
 		cp $(TARGET) $(TARGET).elf
 		$(STRIP) $(TARGET)
 
 .c.o :		$<
-		$(CC) -c $(CFLAGS) $<
-
-.s.o :		$<
-		$(CC) -c $(CFLAGS) $<
+		$(CC) -c $(CFLAGS) $< -o $@
 
 .S.o :		$<
-		$(CC) -c $(CFLAGS) $<
+		$(CC) -c $(CFLAGS) $< -o $@
+
+.s.o :		$<
+		$(CC) -c $(CFLAGS) $< -o $@
 
 $(TARGET).hex :	$(TARGET)
 		$(OBJCOPY) -O ihex $(TARGET) $(TARGET).hex
@@ -57,10 +62,9 @@ $(TARGET).hex :	$(TARGET)
 image :		$(TARGET).hex
 
 obj_clean :
-		rm -f $(OBJS)
+		rm -f $(OBJS) $(DEPS)
 
 clean :
-		rm -f $(OBJS) $(TARGET) $(TARGET).elf $(TARGET).hex
+		rm -f $(OBJS) $(TARGET) $(TARGET).elf $(TARGET).hex $(DEPS)
 
-line :
-		wc -l *.c *.h *.s *.S ld.scr Makefile
+-include $(DEPS)

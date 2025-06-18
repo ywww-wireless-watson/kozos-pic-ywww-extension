@@ -1,4 +1,28 @@
 # KOZOS-PIC
+
+---
+## KOZOS-PIC ywww extension
+Changes from the original KOZOS-PIC are summarized below:
+- Major refactoring of the timer module and introduction of 32-bit timer functionality (`timer.c`/`timer.h`/`tmrdrv.c`/`tmrdrv.h`/`main.c`/`periodic.c`/`kozuser.h`, etc.)
+- Addition of periodic task and latency measurement/visualization features (`periodic.c`/`kozuser.h`/`command.c`/`main.c`)
+- Added `periodic`, `benchmark`, and `reset` commands to the command line (`command.c`)
+- Added 1024-byte region to memory pool (`memory.c`)
+- Redesign of interrupt vectors and handlers (`intr.h`/`vector.s`/`startup.S`/`Makefile`, etc.)
+- High-precision time measurement and latency evaluation using 32-bit timer (`timer.c`/`tmrdrv.c`/`kozuser.h`/`periodic.c`)
+- UART initialization and interrupt handling improvements (`serial.c`/`hardware.c`/`io.h`)
+- Makefile Docker build support, auto dependency generation, and enhanced clean process (`Makefile`)
+- Removed ELF loader, now supports only ihex (`bootload/elf.c`/`elf.h` removed, `main.c`/`Makefile` updated)
+- Expanded command buffer size and buffer overflow protection (`consdrv.c`)
+- Refactored and added memory dump and number conversion functions (`lib.c`/`lib.h`)
+- Various bug fixes and stability improvements (enhanced error handling, robust interrupt/thread management, etc.)
+- Adjustments to initialization, stack area, and linker script (`ld.scr`/`startup.S`/`main.c`)
+- Added/updated license notice (`LICENSE`)
+
+This project uses container image `ghcr.io/envzhu/kozos-pic-ongdb/build:latest` published by `envzhu` on GitHub Container Registry.
+
+Original KOZOS-PIC README.md follows:
+---
+
 ※日本語は下の方にあります。  
 
 ## Overview

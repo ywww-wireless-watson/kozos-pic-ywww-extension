@@ -3,7 +3,7 @@
 
 #define SERIAL_UART_NUM 2
 
-#define PIC_UART1 ((volatile struct pic_uart *)0xBF806000)
+#define PIC_UART1 ((volatile struct pic_uart *)0xBF806100)
 #define PIC_UART2 ((volatile struct pic_uart *)0xBF806200)
 
 
@@ -42,6 +42,7 @@ struct pic_uart {
 #define IFS1    *((volatile unsigned int *)0xBF881040)
 #define IFS1CLR *((volatile unsigned int *)0xBF881044)
 #define IFS1SET *((volatile unsigned int *)0xBF881048)
+
 
 #define IPC8    *((volatile unsigned int *)0xBF881110)
 #define IPC8CLR *((volatile unsigned int *)0xBF881114)
@@ -82,7 +83,7 @@ struct pic_uart {
 #define PIC_UART_UxSTA_URXTISEL_EVERY  (0<<6)
 #define PIC_UART_UxSTA_URXTISEL_THREE  (2<<6)
 #define PIC_UART_UxSTA_URXTISEL_FULL   (3<<6)
-#define PIC_UART_UxSTA_TRMT_TXBUF_is_EMPTY  (1<<8)
+#define PIC_UART_UxSTA_TRMT    (1<<8)
 #define PIC_UART_UxSTA_UTXBF   (1<<9)
 #define PIC_UART_UxSTA_UTXEN   (1<<10)
 #define PIC_UART_UxSTA_UTXBRK  (1<<11)
@@ -117,30 +118,17 @@ static struct {
 /* デバイス初期化 */
 int serial_init(int index)
 {
-  if(!((index==0)|(index==1)))  return -1; 
-
   volatile struct pic_uart *uart = regs[index].uart;
-
-  /*
-  *  もしシリアルデバイスが送信中であれば、
-  *  送信が完了(送信バッファが空）になってから,初期化する
-  */
-  while (!(uart ->UxSTA & PIC_UART_UxSTA_TRMT_TXBUF_is_EMPTY));
-
-  uart ->UxSTA   = 0x0;
-  uart ->UxTXREG = 0x0;
-  uart ->UxBRG   = F_PBCLK / 9600 / 16 - 1; //UxBRG = F_PBCLK / baud_rate / 16
-  uart ->UxSTASET= PIC_UART_UxSTA_URXEN | PIC_UART_UxSTA_UTXEN;
-  uart ->UxMODE  = PIC_UART_UxMODE_ON;
 
   if(index==0){
     IPC8SET = 0b01001;
-    IFS1CLR = PIC_UART1_RECV_INTTERUPT_FLAG|PIC_UART1_SEND_INTTERUPT_FLAG;
-	}else{
+    IFS1CLR=PIC_UART1_RECV_INTTERUPT_FLAG|PIC_UART1_SEND_INTTERUPT_FLAG;
+  }
+  if(index==1){
     IPC9SET = (0b00101<<8);
-    IFS1CLR = PIC_UART2_RECV_INTTERUPT_FLAG|PIC_UART2_SEND_INTTERUPT_FLAG;
-	}
-	return 0;
+    IFS1CLR=PIC_UART2_RECV_INTTERUPT_FLAG|PIC_UART2_SEND_INTTERUPT_FLAG;
+  }
+  return 0;
 }
 
 /* 送信可能か？ */

@@ -27,7 +27,7 @@ MEMORY
   softvec(rw)	      : o = 0xA0000000, l = 0x100   /* top of RAM */
   data_mem (wx)     : o = 0xA0000100, l = 0xF00   /* data memory 3.75KB */
   bootstack(rw)	    : o = 0xA0007FFC, l = 0x0
-  intrstack(rw)	    : o = 0xA0007FFC, l = 0x0
+  intrstack(rw)	    : o = 0xA0007FFC, l = 0x0     /* end of RAM */
 }
 
 
@@ -46,12 +46,16 @@ SECTIONS
     KEEP(*(.start))
   } > boot_mem
 
+  .MIPS.abiflags : {
+    *(.MIPS.abiflags)
+  } > program_mem
+
   /*
    * Interrupt vectors.
    * They are 64 small code segments in sequence.
    */
-   .vector_general_exception _ebase_address + 0x180 :
-      { KEEP(*(.vector_general_exception)) } > vectors_mem
+   .vector_soft_intr _ebase_address + 0x180 :
+      { KEEP(*(.vector_soft_intr)) } > vectors_mem
 
         .vector_0 _ebase_address + 0x200 :
         { KEEP(*(.vector_0)) } > vectors_mem

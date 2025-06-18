@@ -3,7 +3,6 @@
 #include "xmodem.h"
 #include "lib.h"
 #include "hardware.h"
-#include "elf.h"
 #include "ihex.h"
 #include "interrupt.h"
 #include "intr.h"
@@ -21,8 +20,6 @@ static int init(void)
 
   /* シリアルの初期化 */
   serial_init(SERIAL_DEFAULT_DEVICE);
-
-  ihex_init();
 
   return 0;
 }
@@ -52,15 +49,28 @@ int main(void)
     gets(buf); /* シリアルからのコマンド受信 */
 
     if (!strcmp(buf, "load")) { /* XMODEMでのファイルのダウンロード */
-      size = xmodem_streaming(ihex_decode);
+      size = xmodem_streaming(ihex_decode); // xmodem_streaming()関数を呼び出し，ihex_decode()関数を用いて受信データをデコード
       wait(); /* 転送アプリが終了し端末アプリに制御が戻るまで待ち合わせる */
       if (size < 0) {
 	puts("\nXMODEM receive error!\n");
+      switch (size) {
+      case IHEX_ERR_STARTCHAR:
+        puts("IHEX error: Invalid start character!\n");
+        break;
+      case IHEX_ERR_CHECKSUM:
+        puts("IHEX error: Checksum mismatch!\n");
+        break;
+      case IHEX_ERR_RECORDTYPE:
+        puts("IHEX error: Unsupported record type!\n");
+        break;
+      default:
+        break;
+      }
       } else {
 	puts("\nXMODEM receive succeeded.\n");
       }
-      entry_point = ihex_startaddr();
-    } else if (!strcmp(buf, "run")) { /* ELF形式ファイルの実行 */
+    } else if (!strcmp(buf, "run")) { /* ihex形式ファイルの実行 */
+      entry_point = ihex_startaddr(); // ihex_startaddr()関数を呼び出し，展開時に設定されたエントリ・ポイントを取得
       if (!entry_point) {
 	puts("run error!\n");
       } else {

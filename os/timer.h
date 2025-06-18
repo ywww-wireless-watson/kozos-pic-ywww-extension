@@ -7,6 +7,8 @@ void timer_expire(int index);       /* タイマ満了処理 */
 int timer_stop(int index);          /* タイマキャンセル */
 void timer_intr_enable(int index);
 void timer_intr_disable(int index);
-
+unsigned int timer_get_tmrx();
+unsigned int timer_get_offset();
+void timer_32bit_init();
 
 #endif

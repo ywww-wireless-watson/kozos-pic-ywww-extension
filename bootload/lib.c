@@ -135,7 +135,7 @@ int putxval(unsigned long value, int column)
 }
 
 /* メモリの16進ダンプ出力 */
-static int dump(char *buf, long size)
+int dump(char *buf, long size)
 {
   long i;
 

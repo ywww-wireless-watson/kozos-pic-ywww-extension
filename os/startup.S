@@ -1,23 +1,13 @@
 
 .section .text,"ax",@progbits
 .set noreorder
-.ent _start
-.global _start
-_start:
-  /* set vector address */
-  la $t1, _ebase_address
-  mtc0 $t1, $15, 1        # EBASE register
-
-  /* set vector spacing */
-  la $t1, _vector_spacing
-  li $t2, 0
-  ins $t2, $t1, 5, 5
-  mtc0 $t2, $12, 1        # INTCTL register
-
+.ent _startup
+.global _startup
+_startup:
   la $sp, _bootstack
   j main
   nop
-.end _start
+.end _startup
 
 .set  noat
 .set noreorder
@@ -27,24 +17,25 @@ dispatch:
   /* 今後、多重割り込みに対応した時の為に、一応割り込みを禁止にする */
   di
 
-  /*stall until execution hazards are cleared */
+  /*実行ハザードが解消されるまで待つ */
   ehb
-
+  
+  /* スタック・ポインタの復元 */
   lw	$sp,0($a0)
 
-  /* restore STATUS from stack */
+  /* STATUSレジスタをスタックから復元 */
   lw	$k0, 136($sp)
   mtc0	$k0, $12
 
-  /* restore EPC from stack */
+  /* EPCレジスタをスタックから復元 */
   lw	$k0, 132($sp)
   mtc0	$k0, $14
   
-  /* restore hi from stack */
+  /* hiレジスタをスタックから復元 */
   lw	$k0, 128($sp)
   mthi	$k0
   
-  /* restore lo from stack */
+  /* loレジスタをスタックから復元 */
   lw	$k0, 124($sp)
   mtlo	$k0
 
@@ -52,8 +43,8 @@ dispatch:
   lw $30,116($sp)
   /*lw $29,112($sp)*/
   lw $28,108($sp)
-  /* skip $27 */   /* $k0 and $k1 are reserved for OS kernel  */
-  /* skip $26 */   /* so we don't need to seve these register.*/
+  /* skip $27 */   /* $k0と$k1レジスタは、OSカーネル用に予約されており  */
+  /* skip $26 */   /* 保存しておく必要はない*/
   lw $25,96($sp)
   lw $24,92($sp)
   lw $23,88($sp)
@@ -82,6 +73,7 @@ dispatch:
 
   addiu	$sp, $sp, 140
 
+  ei
   eret
   nop
 .end dispatch
